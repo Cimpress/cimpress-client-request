@@ -1,0 +1,12 @@
+language: node_js
+sudo: false
+script:
+- npm test
+deploy:
+  provider: npm
+  email: ryan@ryanbreen.com
+  on:
+    tags: true
+    all_branches: true
+  api_key:
+    secure: N5Xu1GdCVfi2FcXqck09BR9ko3Kki/D9aC0XgncsOja8rIN6ojMwcbnSU/tBUVFVUS48rNwFP5ta91Az9FFQEmAQa4vIyTB4XA9h4jKCFBylJtH89SlxBMK6UPndCL9e8A1jDroJRkkVnIWVfcol5xrLP01w0FIoJVg7OFfZLP8=
