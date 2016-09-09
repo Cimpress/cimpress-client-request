@@ -4,10 +4,8 @@ A module for handling generation of OAuth Bearer tokens issued by Auth0 by integ
 
 ## Installation
 
-NOTE: The below is a lie.  This isn't yet pubished to NPM but will be as soon as we cross some t's and dot some i's.
-
 ```shell
-npm install cimpress-client-request --save
+npm install cimpress-client-request
 ```
 
 ### Usage
