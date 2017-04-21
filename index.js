@@ -1,3 +1,4 @@
+var _ = require('lodash');
 var jwt = require('jsonwebtoken');
 var request = require('request');
 
@@ -133,8 +134,12 @@ module.exports = (function() {
 
       // Validate whether we have enough information to authenticate
       if (!(delegate_config && delegate_config.refresh_token && delegate_config.target_id)) {
+        if (res) return callback(new Error('Not enough information for a delegation call'));
         logger("No v1 auth possible.  Attempting an unauthenticated request");
-        return request(options, callback);
+        return request(_.omit(options, ['auth']), function(err, res, body) {
+          if (res.statusCode === 401) v1auth(res);
+          else callback(err, res, body);
+        });
       }
 
       retrieve_delegated_token(delegate_config, function(err, tok) {

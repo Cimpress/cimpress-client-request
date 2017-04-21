@@ -29,4 +29,15 @@ describe('Auth0 v1 delegation', function () {
       done();
     });
   });
+
+  it('should make a successful request against a backing API without a provided target_id', function (done) {
+    request({
+      auth: { refresh_token: config.refresh_token },
+      url: process.env.API_THAT_SUPPORTS_DELEGATION
+    }, function(err, res, body) {
+      expect(err).to.be.null;
+      expect(res.statusCode).not.to.equal(401);
+      done();
+    })
+  });
 });
