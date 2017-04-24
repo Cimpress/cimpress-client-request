@@ -14,8 +14,8 @@ describe('Auth0 api-auth client grants', function () {
   });
 
   var config = {
-    authorization_server: "https://cimpress-dev.auth0.com/oauth/token",
-    audience: "https://development.api.cimpress.io/",
+    authorization_server: "https://cimpress.auth0.com/oauth/token",
+    audience: "https://api.cimpress.io/",
     client_id: process.env.CIMPRESS_IO_CLIENT_ID,
     client_secret: process.env.CIMPRESS_IO_CLIENT_SECRET
   };

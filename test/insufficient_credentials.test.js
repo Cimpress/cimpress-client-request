@@ -14,8 +14,8 @@ describe('Insufficient credentials', function () {
   });
 
   var config = {
-    authorization_server: "https://cimpress-dev.auth0.com/oauth/token",
-    audience: "https://development.api.cimpress.io/",
+    authorization_server: "https://cimpress.auth0.com/oauth/token",
+    audience: "https://api.cimpress.io/",
     client_id: process.env.CIMPRESS_IO_CLIENT_ID,
     client_secret: process.env.CIMPRESS_IO_CLIENT_SECRET
   };
@@ -27,7 +27,11 @@ describe('Insufficient credentials', function () {
       url: process.env.API_THAT_SUPPORTS_DELEGATION
     }, function(err, res, body) {
       expect(err).to.be.null;
-      expect(res.statusCode).to.equal(401);
+      try {
+        expect(res.statusCode).to.equal(401);
+      } catch(e) {
+        expect(res.statusCode).to.equal(403);
+      }
       done();
     });
   });
