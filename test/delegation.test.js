@@ -14,7 +14,7 @@ describe('Auth0 v1 delegation', function () {
   });
 
   var config = {
-    target_id: "ixwhEFzC5TcFViYmi5xzVevRtx2mSjyG",
+    target_id: process.env.CIMPRESS_IO_TARGET_ID,
     refresh_token: process.env.CIMPRESS_IO_REFRESH_TOKEN
   };
 
@@ -28,5 +28,16 @@ describe('Auth0 v1 delegation', function () {
       expect(res.statusCode).not.to.equal(401);
       done();
     });
+  });
+
+  it('should make a successful request against a backing API without a provided target_id', function (done) {
+    request({
+      auth: { refresh_token: config.refresh_token },
+      url: process.env.API_THAT_SUPPORTS_DELEGATION
+    }, function(err, res, body) {
+      expect(err).to.be.null;
+      expect(res.statusCode).not.to.equal(401);
+      done();
+    })
   });
 });
