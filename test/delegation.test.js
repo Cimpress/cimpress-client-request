@@ -14,7 +14,7 @@ describe('Auth0 v1 delegation', function () {
   });
 
   var config = {
-    target_id: "ixwhEFzC5TcFViYmi5xzVevRtx2mSjyG",
+    target_id: process.env.CIMPRESS_IO_TARGET_ID,
     refresh_token: process.env.CIMPRESS_IO_REFRESH_TOKEN
   };
 
