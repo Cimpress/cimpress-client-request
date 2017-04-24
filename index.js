@@ -113,7 +113,6 @@ var parse_auth_headers = module.exports.parse_auth_headers = function(config, re
  * flow (preferred) or via delegation.
  */
 module.exports = (function() {
-
   var request_builder = function(options, callback) {
 
     var retry_loop = function() {
@@ -209,6 +208,10 @@ module.exports = (function() {
 })();
 
 module.exports.credential_cache = credential_cache;
+
+module.exports.set_credential_cache = function(cache){
+  credential_cache = cache;
+};
 
 module.exports.set_logger = function(l) {
   logger = l;

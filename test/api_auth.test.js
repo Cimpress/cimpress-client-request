@@ -7,10 +7,21 @@ var cimpress_client_request = require('../'),
   chai = require("chai"),
   assert = require("assert-plus");
 
-describe('Auth0 api-auth client grants', function () {
+describe('Given an alternative cache', function () {
+var request;
+var cache;
+var cachedValue;
 
   beforeEach(function() {
+    cache = {
+      flushAll: function(){cachedValue = null;},
+      set: function(key, value, ttl){cachedValue = value;},
+      get: function(key){return cachedValue;}
+    }
+
+    cimpress_client_request.set_credential_cache(cache);
     cimpress_client_request.credential_cache.flushAll();
+    request = cimpress_client_request;
   });
 
   var config = {
@@ -20,7 +31,7 @@ describe('Auth0 api-auth client grants', function () {
     client_secret: process.env.CIMPRESS_IO_CLIENT_SECRET
   };
 
-  it('Should make a successful request against the backing API', function(done) {
+  it('Should store the access token in the provided cache', function(done) {
 
     request({
       auth: config,
@@ -28,6 +39,7 @@ describe('Auth0 api-auth client grants', function () {
     }, function(err, res, body) {
       expect(err).to.be.null;
       expect(res.statusCode).not.to.equal(401);
+      expect(cachedValue).to.not.be.null;
       done();
     });
   });
