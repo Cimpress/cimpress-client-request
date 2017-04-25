@@ -10,15 +10,16 @@ describe('Given an alternative cache', function () {
 var request;
 var cache;
 var cachedValue;
+var testing_what_we_claim_to_test;
+var old_cache = cimpress_client_request.credential_cache;
 
 
   beforeEach(function() {
+    testing_what_we_claim_to_test = false;
     cache = {
       flushAll: function(){cachedValue = null;},
       set: function(key, value, ttl){
-        console.log('Adding to cache');
-        console.log(key);
-        console.log(value);
+        testing_what_we_claim_to_test = true;
         cachedValue = value;},
       get: function(key){return cachedValue;}
     }
@@ -34,6 +35,10 @@ var cachedValue;
     client_secret: process.env.CIMPRESS_IO_CLIENT_SECRET
   };
 
+  afterEach(function(){
+    cimpress_client_request.set_credential_cache(old_cache);
+  })
+
   it('Should store the access token in the provided cache', function(done) {
 
     request({
@@ -42,6 +47,7 @@ var cachedValue;
     }, function(err, res, body) {
       expect(err).to.be.null;
       expect(res.statusCode).not.to.equal(401);
+      expect(testing_what_we_claim_to_test).to.equal(true);
       expect(cachedValue).to.not.be.null;
       done();
     });
