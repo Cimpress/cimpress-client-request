@@ -15,17 +15,21 @@ var cachedValue;
   beforeEach(function() {
     cache = {
       flushAll: function(){cachedValue = null;},
-      set: function(key, value, ttl){cachedValue = value;},
+      set: function(key, value, ttl){
+        console.log('Adding to cache');
+        console.log(key);
+        console.log(value);
+        cachedValue = value;},
       get: function(key){return cachedValue;}
     }
-    cimpress_client_request.credential_cache = cache;
+    cimpress_client_request.set_credential_cache(cache);
     cimpress_client_request.credential_cache.flushAll();
     request = cimpress_client_request;
   });
 
   var config = {
-    authorization_server: "https://cimpress-dev.auth0.com/oauth/token",
-    audience: "https://development.api.cimpress.io/",
+    authorization_server: "https://cimpress.auth0.com/oauth/token",
+    audience: "https://api.cimpress.io/",
     client_id: process.env.CIMPRESS_IO_CLIENT_ID,
     client_secret: process.env.CIMPRESS_IO_CLIENT_SECRET
   };
