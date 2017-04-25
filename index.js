@@ -209,10 +209,6 @@ module.exports = (function() {
 
 module.exports.credential_cache = credential_cache;
 
-module.exports.set_credential_cache = function(cache){
-  credential_cache = cache;
-};
-
 module.exports.set_logger = function(l) {
   logger = l;
 };
