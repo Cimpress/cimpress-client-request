@@ -204,10 +204,9 @@ module.exports = (function () {
           if (cachedResponse) {
             callback(err, cachedResponse.res, cachedResponse.body);
           } else {
-
             request(options, function (err, res, body) {
               // If we get a 401 on even delegated auth, return to caller.
-              if (res.statusCode === 401) {
+              if (res && res.statusCode === 401) {
                 return callback(err, res, body);
               }
 
@@ -254,7 +253,7 @@ module.exports = (function () {
             request(options, function (err, res, body) {
 
               // If we got a 401, move on to v1auth
-              if (res.statusCode === 401) {
+              if (res && res.statusCode === 401) {
                 return v1auth(res);
               }
 
@@ -281,7 +280,7 @@ module.exports = (function () {
             request(options, function (err, res, body) {
 
               // If we got a 401, move on to v2auth
-              if (res.statusCode === 401) {
+              if (res && res.statusCode === 401) {
                 return v2auth();
               }
 
