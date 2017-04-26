@@ -18,10 +18,10 @@ var check_cache_for_response = function (method, url, authToken, callback) {
   credential_cache.get(cacheKey, function (err, data) {
     if (err) {
       logger(err);
-    } else if (null, data) {
-      callback(null, data);
+      callback(err);
+    } else {
+      callback(err, data);
     }
-    callback(err);
   });
 };
 
@@ -45,6 +45,7 @@ var save_response_in_cache = function (method, url, authToken, res, body) {
       },
       cacheControl)
   }
+  return;
 };
 
 var retrieve_client_grant = function (config, cb) {
