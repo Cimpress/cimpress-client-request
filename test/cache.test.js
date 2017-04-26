@@ -13,7 +13,6 @@ var cachedValue;
 var testing_what_we_claim_to_test;
 var old_cache = cimpress_client_request.credential_cache;
 
-
   beforeEach(function() {
     testing_what_we_claim_to_test = false;
     cache = {
