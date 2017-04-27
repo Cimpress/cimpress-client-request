@@ -5,7 +5,13 @@ A module for handling generation of OAuth Bearer tokens issued by Auth0 by integ
 ## Installation
 
 ```shell
-npm install cimpress-client-request
+npm i cimpress-client-request --save
+```
+
+or
+
+```shell
+yarn add cimpress-client-request
 ```
 
 ### Usage
@@ -13,7 +19,7 @@ npm install cimpress-client-request
 This module exposes a single method:
 
 ```js
-module.exports.refresh = function(config, cb) {}
+module.exports.request = function(config, cb) {}
 ```
 
 This works as a drop-in replacement for [request](https://github.com/request/request).  Adopting this flow is as simple as these two surgical incisions:
@@ -24,6 +30,8 @@ var request = require('cimpress-client-request');
 ```
 
 ```js
+
+
 // Note the set of 4 possible new options that can be passed in the request.js options.auth object.
 // Every other property in the request options object works as normal, and you can call all of the
 // convenience methods exposed by request.js.
@@ -49,19 +57,25 @@ Here's how you should use those 4 `auth` parameters:
 | authorization_server | OPTIONAL The server to call to request client credential grants  (https://auth0.com/docs/api-auth/grant/client-credentials).  This defaults to https://cimpress-dev.auth0.com/oauth/token.
 | audience | OPTIONAL The audience to send when requesting client credential grants  (https://auth0.com/docs/api-auth/grant/client-credentials).  This defaults to https://api.cimpress.io/ |
 
+
+You can specify your caching method by calling:
+
+```js
+var request = require('cimpress-client-request');
+var altCache = require('alternative-caching-library-here');
+
+request.set_credentials_cache = altCache;
+
+```
+Note that the alternative caching method you use must support callbacks and have the following function definitions:
+* get(key, callback)
+* set(key, value, ttl)
+* flushAll()
+
 ### Tests
 You might also want to [look at our tests](https://mcpstash.cimpress.net/projects/CE/repos/cimpress-client-request-node/browse/test) to see some examples of usage.
 
-You can run tests via `grunt` or `grunt test`, but keep in mind that the tests are reliant on a few configurations that must be provided via environment variables:
-
-| Variable  | Description  |
-|---|---|
-| CIMPRESS_IO_REFRESH_TOKEN | A refresh token retrieved from developer.cimpress.io. |
-| CIMPRESS_IO_CLIENT_ID | The client id you wish to use to request client credential grants (https://auth0.com/docs/api-auth/grant/client-credentials). |
-| CIMPRESS_IO_CLIENT_SECRET | The client secret you wish to use to request client credential grants (https://auth0.com/docs/api-auth/grant/client-credentials). |
-| CIMPRESS_IO_TARGET_ID | The target ID used for delegation flows |
-| API_THAT_SUPPORTS_CLIENT_GRANTS | The URL for any `GET` endpoint on an API that supports client credential grants (https://auth0.com/docs/api-auth/grant/client-credentials). |
-| API_THAT_SUPPORTS_DELEGATION | The URL for any `GET` endpoint on an API that supports delegated tokens (https://auth0.com/docs/api-auth/grant/client-credentials). |
+You can run tests via `grunt` or `grunt test`.
 
 ## Development
 

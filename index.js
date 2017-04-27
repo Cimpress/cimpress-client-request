@@ -1,14 +1,61 @@
 var _ = require('lodash');
 var jwt = require('jsonwebtoken');
 var request = require('request');
+var nodeCache = require('node-cache');
+var parseCacheControl = require('parse-cache-control');
 
-var credential_cache = new (require("node-cache"))();
+var credential_cache = new nodeCache({ useClones: false });
 
 var logger = console.log;
 
 var REFRESH_TOKEN_CLIENT_ID = process.env.DEFAULT_TARGET_ID || 'QkxOvNz4fWRFT6vcq79ylcIuolFz2cwN';
 
-var retrieve_client_grant = function(config, cb) {
+var construct_cache_key = function (method, url, authToken) {
+  return "" + method + "-" + url + "-" + authToken;
+};
+
+var check_cache_for_response = function (method, url, authToken, callback) {
+  var cacheKey = construct_cache_key(method, url, authToken);
+  credential_cache.get(cacheKey, function (err, data) {
+    if (err) {
+      logger(err);
+      return callback(err);
+    } else {
+      return callback(err, data);
+    }
+  });
+};
+
+var parse_cache_control_header = function (headers) {
+  if (headers) {
+    if (headers["Cache-Control"]) {
+      return parseCacheControl(headers["Cache-Control"])['max-age'] || 0;
+    } else if (headers["cache-control"]) {
+      return parseCacheControl(headers["cache-control"])['max-age'] || 0;
+    } else {
+      return null;
+    }
+  } else {
+    return null;
+  }
+};
+
+var save_response_in_cache = function (method, url, authToken, res, body) {
+  var cacheKey = construct_cache_key(method, url, authToken);
+  var cacheControl = parse_cache_control_header(res.headers);
+  if (cacheControl) {
+    credential_cache.set(
+      cacheKey,
+      {
+        res: res,
+        body: body,
+      },
+      cacheControl)
+  }
+  return;
+};
+
+var retrieve_client_grant = function (config, cb) {
   var audience = config.audience || 'https://api.cimpress.io/';
   var client_grant_options = {
     method: 'POST',
@@ -28,14 +75,14 @@ var retrieve_client_grant = function(config, cb) {
     return cb(null, jwt_obj);
   }
 
-  request(client_grant_options, function(err, response, body) {
+  request(client_grant_options, function (err, response, body) {
     if (err) {
       return cb(err);
     }
 
     try {
       body = JSON.parse(body);
-    } catch(e) {
+    } catch (e) {
       return cb('Invalid JSON response from Auth0: ' + body);
     }
 
@@ -43,11 +90,11 @@ var retrieve_client_grant = function(config, cb) {
     var jwt_obj = jwt.decode(body.access_token);
     credential_cache.set(audience, body.access_token, jwt_obj.exp - jwt_obj.iat);
 
-    cb(null, body.access_token);
+    return cb(null, body.access_token);
   });
 };
 
-var retrieve_delegated_token = function(config, cb) {
+var retrieve_delegated_token = function (config, cb) {
 
   var delegation_options = {
     method: 'POST',
@@ -70,14 +117,14 @@ var retrieve_delegated_token = function(config, cb) {
     return cb(null, jwt_obj);
   }
 
-  request(delegation_options, function(err, response, body) {
+  request(delegation_options, function (err, response, body) {
     if (err) {
       return cb(err);
     }
 
     try {
       body = JSON.parse(body);
-    } catch(e) {
+    } catch (e) {
       return cb('Invalid JSON response from Auth0: ' + body);
     }
 
@@ -85,7 +132,7 @@ var retrieve_delegated_token = function(config, cb) {
     var jwt_obj = jwt.decode(body.id_token);
     credential_cache.set(config.target_id, body.id_token, jwt_obj.exp - jwt_obj.iat);
 
-    cb(null, body.id_token);
+    return cb(null, body.id_token);
   });
 
 };
@@ -95,7 +142,7 @@ var retrieve_delegated_token = function(config, cb) {
  * the first parameter of compute_bearer.  If no suitable config can be generated due to the
  * absence of Www-Authenticate headers, this method returns undefined.
  */
-var parse_auth_headers = module.exports.parse_auth_headers = function(config, res) {
+var parse_auth_headers = module.exports.parse_auth_headers = function (config, res) {
   if (res.headers['www-authenticate']) {
     var matches = res.headers['www-authenticate'].match(/client_id=([^\s]+)/);
     if (matches.length > 0) {
@@ -112,21 +159,25 @@ var parse_auth_headers = module.exports.parse_auth_headers = function(config, re
  * all calls with an OAuth Bearer token from Auth0, whether retrieved via a client credentials grant
  * flow (preferred) or via delegation.
  */
-module.exports = (function() {
-  var request_builder = function(options, callback) {
+module.exports = (function () {
+  var request_builder = function (options, callback) {
 
-    var retry_loop = function() {
+    if (!options.method) {
+      options.method = 'GET';
+    }
+
+    var retry_loop = function () {
       // Look for a retry_count property in options
       options.retry_count = options.retry_count + 1 || 1;
 
       logger("Retrying in %sms", 200 << options.retry_count);
 
-      setTimeout(function() {
+      setTimeout(function () {
         request_builder(options, callback);
       }, 200 << options.retry_count);
     };
 
-    var v1auth = function(res) {
+    var v1auth = function (res) {
       // If we got an unauthorized since this API doesn't support client grant flows, we
       // pass the response to parse_auth_headers to find a config that might work better.
       var delegate_config = res ? parse_auth_headers(options.auth, res) : options.auth;
@@ -135,13 +186,13 @@ module.exports = (function() {
       if (!(delegate_config && delegate_config.refresh_token && delegate_config.target_id)) {
         if (res) return callback(new Error('Not enough information for a delegation call'));
         logger("No v1 auth possible.  Attempting an unauthenticated request");
-        return request(_.omit(options, ['auth']), function(err, res, body) {
+        return request(_.omit(options, ['auth']), function (err, res, body) {
           if (res.statusCode === 401) v1auth(res);
           else callback(err, res, body);
         });
       }
 
-      retrieve_delegated_token(delegate_config, function(err, tok) {
+      retrieve_delegated_token(delegate_config, function (err, tok) {
 
         if (err) {
           logger(err);
@@ -150,23 +201,36 @@ module.exports = (function() {
 
         options.auth.bearer = tok;
 
-        request(options, function(err, res, body) {
-          // If we get a 401 on even delegated auth, return to caller.
-          if (res.statusCode === 401) {
-            return callback(err, res, body);
-          }
+        check_cache_for_response(options.method, options.url, options.auth.bearer, function (err, cachedResponse) {
 
-          // On a connection error, enter exponential backoff protocol
           if (err) {
-            return retry_loop();
+            logger(err);
+            return callback(err);
           }
 
-          callback(err, res, body);
+          if (cachedResponse) {
+            return callback(err, cachedResponse.res, cachedResponse.body);
+          } else {
+            request(options, function (err, res, body) {
+              // If we get a 401 on even delegated auth, return to caller.
+              if (res && res.statusCode === 401) {
+                return callback(err, res, body);
+              }
+
+              // On a connection error, enter exponential backoff protocol
+              if (err) {
+                return retry_loop();
+              }
+
+              save_response_in_cache(options.method, options.url, options.auth.bearer, res, body);
+              return callback(err, res, body);
+            });
+          }
         });
       });
     };
 
-    var v2auth = function() {
+    var v2auth = function () {
 
       // Validate whether we have enough information to attempt authentication
       if (!(options.auth && options.auth.client_id && options.auth.client_secret)) {
@@ -174,7 +238,7 @@ module.exports = (function() {
         return v1auth();
       }
 
-      retrieve_client_grant(options.auth, function(err, tok) {
+      retrieve_client_grant(options.auth, function (err, tok) {
 
         if (err) {
           logger(err);
@@ -183,25 +247,69 @@ module.exports = (function() {
 
         options.auth.bearer = tok;
 
-        request(options, function(err, res, body) {
+        check_cache_for_response(options.method, options.url, options.auth.bearer, function (err, cachedResponse) {
 
-          // If we got a 401, move on to v1auth
-          if (res.statusCode === 401) {
-            return v1auth(res);
-          }
-
-          // On a connection error, enter exponential backoff protocol
           if (err) {
-            return retry_loop();
+            logger(err);
+            return callback(err);
           }
 
-          callback(err, res, body);
+          if (cachedResponse) {
+            return callback(err, cachedResponse.res, cachedResponse.body);
+          } else {
+            request(options, function (err, res, body) {
+
+              // If we got a 401, move on to v1auth
+              if (res && res.statusCode === 401) {
+                return v1auth(res);
+              }
+
+              // On a connection error, enter exponential backoff protocol
+              if (err) {
+                return retry_loop();
+              }
+
+              save_response_in_cache(options.method, options.url, options.auth.bearer, res, body);
+              return callback(err, res, body);
+            });
+          }
         });
       });
     };
 
-    // Try v2 auth first
-    v2auth();
+    var passedInAuth = function () {
+      if (options.auth && options.auth.bearer) {
+
+        check_cache_for_response(options.method, options.url, options.auth.bearer, function (err, cachedResponse) {
+          if (cachedResponse) {
+            return callback(null, cachedResponse.res, cachedResponse.body);
+          } else {
+            request(options, function (err, res, body) {
+
+              // If we got a 401, move on to v2auth
+              if (res && res.statusCode === 401) {
+                return v2auth();
+              }
+
+              // On a connection error, enter exponential backoff protocol
+              if (err) {
+                return retry_loop();
+              }
+
+              save_response_in_cache(options.method, options.url, options.auth.bearer, res, body);
+              return callback(err, res, body);
+            });
+          }
+        });
+      }
+      else {
+        logger("No token passed in. Falling back to v2.");
+        return v2auth();
+      }
+    }
+
+    // Try pre-set auth token first
+    return passedInAuth();
   };
 
   return request.defaults(request_builder);
@@ -209,10 +317,10 @@ module.exports = (function() {
 
 module.exports.credential_cache = credential_cache;
 
-module.exports.set_credential_cache = function(altCache) {
+module.exports.set_credential_cache = function (altCache) {
   credential_cache = altCache;
 };
 
-module.exports.set_logger = function(l) {
+module.exports.set_logger = function (l) {
   logger = l;
 };
