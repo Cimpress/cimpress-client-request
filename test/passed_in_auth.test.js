@@ -26,7 +26,7 @@ describe('Passing in an existing auth token', function () {
     .reply(function(uri, requestBody, cb){
       expect(this.req.headers).to.not.be.null;
       expect(this.req.headers['authorization']).to.not.be.undefined;
-      expect(this.req.headers['authorization']).to.equal('Bearer ' +config.bearer);
+      expect(this.req.headers['authorization']).to.equal('Bearer ' + config.bearer);
       cb(null, [200, 'I\'m a reply body!']);
     });
 

@@ -29,7 +29,7 @@ describe('Making a new request', function () {
       expect(this.req.headers).to.not.be.null;
       expect(this.req.headers['authorization']).to.not.be.undefined;
       expect(this.req.headers['authorization']).to.equal('Bearer ' + config.bearer);
-      return [200, 'I\'m a reply body!', {'Cache-Control': 10,}];
+      return [200, 'I\'m a reply body!', {'Cache-Control': 'public, max-age=10',}];
     });
 
     request({

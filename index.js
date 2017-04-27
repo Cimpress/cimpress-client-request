@@ -2,6 +2,7 @@ var _ = require('lodash');
 var jwt = require('jsonwebtoken');
 var request = require('request');
 var nodeCache = require('node-cache');
+var parseCacheControl = require('parse-cache-control');
 
 var credential_cache = new nodeCache({ useClones: false });
 
@@ -26,8 +27,14 @@ var check_cache_for_response = function (method, url, authToken, callback) {
 };
 
 var parse_cache_control_header = function (headers) {
-  if (headers && headers["Cache-Control"]) {
-    return headers["Cache-Control"];
+  if (headers) {
+    if (headers["Cache-Control"]) {
+      return parseCacheControl(headers["Cache-Control"])['max-age'] || 0;
+    } else if (headers["cache-control"]) {
+      return parseCacheControl(headers["cache-control"])['max-age'] || 0;
+    } else {
+      return 0;
+    }
   } else {
     return 0;
   }
