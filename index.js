@@ -19,9 +19,9 @@ var check_cache_for_response = function (method, url, authToken, callback) {
   credential_cache.get(cacheKey, function (err, data) {
     if (err) {
       logger(err);
-      callback(err);
+      return callback(err);
     } else {
-      callback(err, data);
+      return callback(err, data);
     }
   });
 };
@@ -90,7 +90,7 @@ var retrieve_client_grant = function (config, cb) {
     var jwt_obj = jwt.decode(body.access_token);
     credential_cache.set(audience, body.access_token, jwt_obj.exp - jwt_obj.iat);
 
-    cb(null, body.access_token);
+    return cb(null, body.access_token);
   });
 };
 
@@ -132,7 +132,7 @@ var retrieve_delegated_token = function (config, cb) {
     var jwt_obj = jwt.decode(body.id_token);
     credential_cache.set(config.target_id, body.id_token, jwt_obj.exp - jwt_obj.iat);
 
-    cb(null, body.id_token);
+    return cb(null, body.id_token);
   });
 
 };
@@ -205,11 +205,11 @@ module.exports = (function () {
 
           if (err) {
             logger(err);
-            callback(err);
+            return callback(err);
           }
 
           if (cachedResponse) {
-            callback(err, cachedResponse.res, cachedResponse.body);
+            return callback(err, cachedResponse.res, cachedResponse.body);
           } else {
             request(options, function (err, res, body) {
               // If we get a 401 on even delegated auth, return to caller.
@@ -223,7 +223,7 @@ module.exports = (function () {
               }
 
               save_response_in_cache(options.method, options.url, options.auth.bearer, res, body);
-              callback(err, res, body);
+              return callback(err, res, body);
             });
           }
         });
@@ -251,11 +251,11 @@ module.exports = (function () {
 
           if (err) {
             logger(err);
-            callback(err);
+            return callback(err);
           }
 
           if (cachedResponse) {
-            callback(err, cachedResponse.res, cachedResponse.body);
+            return callback(err, cachedResponse.res, cachedResponse.body);
           } else {
             request(options, function (err, res, body) {
 
@@ -270,7 +270,7 @@ module.exports = (function () {
               }
 
               save_response_in_cache(options.method, options.url, options.auth.bearer, res, body);
-              callback(err, res, body);
+              return callback(err, res, body);
             });
           }
         });
@@ -282,7 +282,7 @@ module.exports = (function () {
 
         check_cache_for_response(options.method, options.url, options.auth.bearer, function (err, cachedResponse) {
           if (cachedResponse) {
-            callback(null, cachedResponse.res, cachedResponse.body);
+            return callback(null, cachedResponse.res, cachedResponse.body);
           } else {
             request(options, function (err, res, body) {
 
@@ -297,7 +297,7 @@ module.exports = (function () {
               }
 
               save_response_in_cache(options.method, options.url, options.auth.bearer, res, body);
-              callback(err, res, body);
+              return callback(err, res, body);
             });
           }
         });
@@ -309,7 +309,7 @@ module.exports = (function () {
     }
 
     // Try pre-set auth token first
-    passedInAuth();
+    return passedInAuth();
   };
 
   return request.defaults(request_builder);

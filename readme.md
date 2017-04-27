@@ -75,16 +75,7 @@ Note that the alternative caching method you use must support callbacks and have
 ### Tests
 You might also want to [look at our tests](https://mcpstash.cimpress.net/projects/CE/repos/cimpress-client-request-node/browse/test) to see some examples of usage.
 
-You can run tests via `grunt` or `grunt test`, but keep in mind that the tests are reliant on a few configurations that must be provided via environment variables:
-
-| Variable  | Description  |
-|---|---|
-| CIMPRESS_IO_REFRESH_TOKEN | A refresh token retrieved from developer.cimpress.io. |
-| CIMPRESS_IO_CLIENT_ID | The client id you wish to use to request client credential grants (https://auth0.com/docs/api-auth/grant/client-credentials). |
-| CIMPRESS_IO_CLIENT_SECRET | The client secret you wish to use to request client credential grants (https://auth0.com/docs/api-auth/grant/client-credentials). |
-| CIMPRESS_IO_TARGET_ID | The target ID used for delegation flows |
-| API_THAT_SUPPORTS_CLIENT_GRANTS | The URL for any `GET` endpoint on an API that supports client credential grants (https://auth0.com/docs/api-auth/grant/client-credentials). |
-| API_THAT_SUPPORTS_DELEGATION | The URL for any `GET` endpoint on an API that supports delegated tokens (https://auth0.com/docs/api-auth/grant/client-credentials). |
+You can run tests via `grunt` or `grunt test`.
 
 ## Development
 
