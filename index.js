@@ -33,17 +33,17 @@ var parse_cache_control_header = function (headers) {
     } else if (headers["cache-control"]) {
       return parseCacheControl(headers["cache-control"])['max-age'] || 0;
     } else {
-      return 0;
+      return null;
     }
   } else {
-    return 0;
+    return null;
   }
 };
 
 var save_response_in_cache = function (method, url, authToken, res, body) {
   var cacheKey = construct_cache_key(method, url, authToken);
   var cacheControl = parse_cache_control_header(res.headers);
-  if (cacheControl > 0) {
+  if (cacheControl) {
     credential_cache.set(
       cacheKey,
       {
