@@ -3,15 +3,22 @@ var jwt = require('jsonwebtoken');
 var request = require('request');
 var nodeCache = require('node-cache');
 var parseCacheControl = require('parse-cache-control');
+var hash = require('string-hash');
 
 var credential_cache = new nodeCache({ useClones: false });
+var hashCacheKey = false;
 
 var logger = console.log;
 
 var REFRESH_TOKEN_CLIENT_ID = process.env.DEFAULT_TARGET_ID || 'QkxOvNz4fWRFT6vcq79ylcIuolFz2cwN';
 
 var construct_cache_key = function (method, url, authToken) {
-  return "" + method + "-" + url + "-" + authToken;
+  var decodedToken = jwt.parse(authToken);
+  if (hashCacheKey) {
+    return hash("" + method + "-" + url + "-" + decodedToken.sub);
+  } else {
+    return "" + method + "-" + url + "-" + decodedToken.sub;
+  }
 };
 
 var check_cache_for_response = function (method, url, authToken, callback) {
@@ -162,6 +169,10 @@ var parse_auth_headers = module.exports.parse_auth_headers = function (config, r
 module.exports = (function () {
   var request_builder = function (options, callback) {
 
+    if (options.hash) {
+      hashCacheKey = options.hash;
+    }
+
     if (!options.method) {
       options.method = 'GET';
     }
@@ -234,7 +245,7 @@ module.exports = (function () {
 
       // Validate whether we have enough information to attempt authentication
       if (!(options.auth && options.auth.client_id && options.auth.client_secret)) {
-        logger("No v2 auth possible.  Falling back to v1.");
+        logger("No v2 auth possible. Falling back to v1.");
         return v1auth();
       }
 

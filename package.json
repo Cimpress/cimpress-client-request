@@ -14,7 +14,8 @@
     "lodash": "^4.17.4",
     "node-cache": "^4.1.1",
     "parse-cache-control": "^1.0.1",
-    "request": "^2.81.0"
+    "request": "^2.81.0",
+    "string-hash": "^1.1.3"
   },
   "devDependencies": {
     "assert-plus": "^1.0.0",
