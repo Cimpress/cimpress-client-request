@@ -42,12 +42,12 @@ var options = {
         refresh_token: 'see below',
         target_id: 'see below'
     },
-    hash: false,
+    keyGen: function(method, url, accessToken){ return url + method + accessToken },
 };
 request(options);
 ```
 
-Here's how you should use those 4 `auth` parameters:
+Here's how you should use those 4 `auth` parameters + keyGen parameter:
 
 | Property | Description |
 |---|---|
@@ -56,8 +56,8 @@ Here's how you should use those 4 `auth` parameters:
 | refresh_token | A refresh token for use in delegation flows, retrieved from developer.cimpress.io.  Defaults to the environment variable `CIMPRESS_IO_REFRESH_TOKEN`.  |
 | target_id | OPTIONAL The client id for which you are trying to retrieve a delegated token.  Note, if you don't know this, you can rely on a 401 with a `Www-Authenticate` to provide the client id.  If you don't provide this config, and the service doesn't provide that header, your call will fail with a 401. |
 | authorization_server | OPTIONAL The server to call to request client credential grants  (https://auth0.com/docs/api-auth/grant/client-credentials).  This defaults to https://cimpress-dev.auth0.com/oauth/token.
-| audience | OPTIONAL The audience to send when requesting client credential grants  (https://auth0.com/docs/api-auth/grant/client-credentials).  This defaults to https://api.cimpress.io/ |
-| hash | OPTIONAL Whether or not to hash the key used to add entries to the database, defaults to false |
+| audience | OPTIONAL The audience to send when requesting client credential grants  (https://auth0.com/docs/api-auth/grant/client-credentials). This defaults to https://api.cimpress.io/ |
+| keyGen | OPTIONAL A function that returns a string to be used when caching responses. Takes in the url, method, and access token used. If not specified a default function is used |
 
 
 You can specify your caching method by calling:

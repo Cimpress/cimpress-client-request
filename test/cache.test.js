@@ -12,14 +12,12 @@ describe('Given an alternative cache', function () {
   var cache;
   var testing_what_we_claim_to_test;
   var old_cache = cimpress_client_request.credential_cache;
-  var audience = "https://audience.com";
 
   beforeEach(function () {
     testing_what_we_claim_to_test = false;
     cache = {
       flushAll: function () { cachedValue = null; },
       set: function (key, value, ttl) {
-        console.log(key);
         testing_what_we_claim_to_test = true;
         return;
       },
@@ -37,7 +35,7 @@ describe('Given an alternative cache', function () {
     request = cimpress_client_request;
   });
 
-  
+  var audience = "https://audience.com";
   var clientId = "abc";
   var clientSecret = "123";
   var url = "https://testing.com";

@@ -6,7 +6,6 @@ var parseCacheControl = require('parse-cache-control');
 var hash = require('honesthash');
 
 var credential_cache = new nodeCache({ useClones: false });
-var hashCacheKey = false;
 
 var logger = console.log;
 
@@ -14,11 +13,7 @@ var REFRESH_TOKEN_CLIENT_ID = process.env.DEFAULT_TARGET_ID || 'QkxOvNz4fWRFT6vc
 
 var construct_cache_key = function (method, url, authToken) {
   var decodedToken = jwt.decode(authToken);
-  if (hashCacheKey) {
-    return hash({ speed: 4, logs: false }).hex("" + method + "-" + url + "-" + decodedToken.sub);
-  } else {
-    return "" + method + "-" + url + "-" + decodedToken.sub;
-  }
+  return "" + method + "-" + url + "-" + decodedToken.sub;
 };
 
 var check_cache_for_response = function (method, url, authToken, callback) {
@@ -169,8 +164,8 @@ var parse_auth_headers = module.exports.parse_auth_headers = function (config, r
 module.exports = (function () {
   var request_builder = function (options, callback) {
 
-    if (options.hash) {
-      hashCacheKey = options.hash;
+    if (options.keyGen) {
+      construct_cache_key = options.keyGen;
     }
 
     if (!options.method) {
