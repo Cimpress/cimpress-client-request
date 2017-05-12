@@ -32,7 +32,7 @@ var request = require('cimpress-client-request');
 ```js
 
 
-// Note the set of 4 possible new options that can be passed in the request.js options.auth object.
+// Note the set of 6 possible new options that can be passed in the request.js options.auth object.
 // Every other property in the request options object works as normal, and you can call all of the
 // convenience methods exposed by request.js.
 var options = {
@@ -41,12 +41,14 @@ var options = {
         client_secret: 'see below',
         refresh_token: 'see below',
         target_id: 'see below'
-    }
+    },
+    keyGen: function(method, url, accessToken){ return url + method + accessToken },
+    retry_count: 2,
 };
 request(options);
 ```
 
-Here's how you should use those 4 `auth` parameters:
+Here's how you should use those 4 `auth` parameters + 2 new parameters:
 
 | Property | Description |
 |---|---|
@@ -55,7 +57,9 @@ Here's how you should use those 4 `auth` parameters:
 | refresh_token | A refresh token for use in delegation flows, retrieved from developer.cimpress.io.  Defaults to the environment variable `CIMPRESS_IO_REFRESH_TOKEN`.  |
 | target_id | OPTIONAL The client id for which you are trying to retrieve a delegated token.  Note, if you don't know this, you can rely on a 401 with a `Www-Authenticate` to provide the client id.  If you don't provide this config, and the service doesn't provide that header, your call will fail with a 401. |
 | authorization_server | OPTIONAL The server to call to request client credential grants  (https://auth0.com/docs/api-auth/grant/client-credentials).  This defaults to https://cimpress-dev.auth0.com/oauth/token.
-| audience | OPTIONAL The audience to send when requesting client credential grants  (https://auth0.com/docs/api-auth/grant/client-credentials).  This defaults to https://api.cimpress.io/ |
+| audience | OPTIONAL The audience to send when requesting client credential grants  (https://auth0.com/docs/api-auth/grant/client-credentials). This defaults to https://api.cimpress.io/ |
+| keyGen | OPTIONAL A function that returns a string to be used when caching responses. Takes in the url, method, and access token used. If not specified a default function is used |
+| retry_count | OPTIONAL The number of times to retry when receiving a non-2XX response |
 
 
 You can specify your caching method by calling:

@@ -11,7 +11,8 @@ var logger = console.log;
 var REFRESH_TOKEN_CLIENT_ID = process.env.DEFAULT_TARGET_ID || 'QkxOvNz4fWRFT6vcq79ylcIuolFz2cwN';
 
 var construct_cache_key = function (method, url, authToken) {
-  return "" + method + "-" + url + "-" + authToken;
+  var decodedToken = jwt.decode(authToken);
+  return "" + method + "-" + url + "-" + decodedToken.sub;
 };
 
 var check_cache_for_response = function (method, url, authToken, callback) {
@@ -162,6 +163,10 @@ var parse_auth_headers = module.exports.parse_auth_headers = function (config, r
 module.exports = (function () {
   var request_builder = function (options, callback) {
 
+    if (options.keyGen) {
+      construct_cache_key = options.keyGen;
+    }
+
     if (!options.method) {
       options.method = 'GET';
     }
@@ -222,7 +227,9 @@ module.exports = (function () {
                 return retry_loop();
               }
 
-              save_response_in_cache(options.method, options.url, options.auth.bearer, res, body);
+              if (res.statusCode >= 200 && res.statusCode < 300){
+                save_response_in_cache(options.method, options.url, options.auth.bearer, res, body);
+              }
               return callback(err, res, body);
             });
           }
@@ -234,7 +241,7 @@ module.exports = (function () {
 
       // Validate whether we have enough information to attempt authentication
       if (!(options.auth && options.auth.client_id && options.auth.client_secret)) {
-        logger("No v2 auth possible.  Falling back to v1.");
+        logger("No v2 auth possible. Falling back to v1.");
         return v1auth();
       }
 
@@ -269,7 +276,9 @@ module.exports = (function () {
                 return retry_loop();
               }
 
-              save_response_in_cache(options.method, options.url, options.auth.bearer, res, body);
+              if (res.statusCode >= 200 && res.statusCode < 300){
+                save_response_in_cache(options.method, options.url, options.auth.bearer, res, body);
+              }
               return callback(err, res, body);
             });
           }
@@ -296,7 +305,9 @@ module.exports = (function () {
                 return retry_loop();
               }
 
-              save_response_in_cache(options.method, options.url, options.auth.bearer, res, body);
+              if (res.statusCode >= 200 && res.statusCode < 300){
+                save_response_in_cache(options.method, options.url, options.auth.bearer, res, body);
+              }
               return callback(err, res, body);
             });
           }

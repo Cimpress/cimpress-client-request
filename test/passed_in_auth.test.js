@@ -6,12 +6,23 @@ var cimpress_client_request = require('../'),
   expect = require("chai").expect,
   chai = require("chai"),
   assert = require("assert-plus"),
-  nock = require('nock');
+  nock = require('nock'),
+  sinon = require('sinon'),
+  jwt = require('jsonwebtoken');
 
 describe('Passing in an existing auth token', function () {
 
+var jwtDecodeStub;
+
   beforeEach(function() {
     cimpress_client_request.credential_cache.flushAll();
+    jwtDecodeStub = sinon
+      .stub(jwt, 'decode')
+      .callsFake(function () { return "abcd" });
+  });
+
+  after(function () {
+    jwtDecodeStub.restore();
   });
 
   var config = {
