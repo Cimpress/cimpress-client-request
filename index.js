@@ -3,7 +3,6 @@ var jwt = require('jsonwebtoken');
 var request = require('request');
 var nodeCache = require('node-cache');
 var parseCacheControl = require('parse-cache-control');
-var hash = require('honesthash');
 
 var credential_cache = new nodeCache({ useClones: false });
 
