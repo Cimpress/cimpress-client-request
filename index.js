@@ -3,7 +3,7 @@ var jwt = require('jsonwebtoken');
 var request = require('request');
 var nodeCache = require('node-cache');
 var parseCacheControl = require('parse-cache-control');
-var hash = require('string-hash');
+var hash = require('honesthash');
 
 var credential_cache = new nodeCache({ useClones: false });
 var hashCacheKey = false;
@@ -13,9 +13,9 @@ var logger = console.log;
 var REFRESH_TOKEN_CLIENT_ID = process.env.DEFAULT_TARGET_ID || 'QkxOvNz4fWRFT6vcq79ylcIuolFz2cwN';
 
 var construct_cache_key = function (method, url, authToken) {
-  var decodedToken = jwt.parse(authToken);
+  var decodedToken = jwt.decode(authToken);
   if (hashCacheKey) {
-    return hash("" + method + "-" + url + "-" + decodedToken.sub);
+    return hash({ speed: 4, logs: false }).hex("" + method + "-" + url + "-" + decodedToken.sub);
   } else {
     return "" + method + "-" + url + "-" + decodedToken.sub;
   }
@@ -233,7 +233,9 @@ module.exports = (function () {
                 return retry_loop();
               }
 
-              save_response_in_cache(options.method, options.url, options.auth.bearer, res, body);
+              if (res.statusCode >= 200 && res.statusCode < 300){
+                save_response_in_cache(options.method, options.url, options.auth.bearer, res, body);
+              }
               return callback(err, res, body);
             });
           }
@@ -280,7 +282,9 @@ module.exports = (function () {
                 return retry_loop();
               }
 
-              save_response_in_cache(options.method, options.url, options.auth.bearer, res, body);
+              if (res.statusCode >= 200 && res.statusCode < 300){
+                save_response_in_cache(options.method, options.url, options.auth.bearer, res, body);
+              }
               return callback(err, res, body);
             });
           }
@@ -307,7 +311,9 @@ module.exports = (function () {
                 return retry_loop();
               }
 
-              save_response_in_cache(options.method, options.url, options.auth.bearer, res, body);
+              if (res.statusCode >= 200 && res.statusCode < 300){
+                save_response_in_cache(options.method, options.url, options.auth.bearer, res, body);
+              }
               return callback(err, res, body);
             });
           }

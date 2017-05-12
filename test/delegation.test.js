@@ -6,7 +6,9 @@ var cimpress_client_request = require('../'),
   expect = require("chai").expect,
   chai = require("chai"),
   assert = require("assert-plus"),
-  nock = require('nock');
+  nock = require('nock'),
+  sinon = require('sinon'),
+  jwt = require('jsonwebtoken');
 
 describe('Auth0 v1 delegation', function () {
 
@@ -15,6 +17,13 @@ describe('Auth0 v1 delegation', function () {
   var authV1Token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWV9.TJVA95OrM7E2cBab30RMHrHDcEfxjoYZgeFONFh7HgQ";
   var callingClientId = "abcd";
   var v1AuthServer = "https://v1auth.com";
+  var jwtDecodeStub;
+
+  before(function() {
+    jwtDecodeStub = sinon
+      .stub(jwt, 'decode')
+      .callsFake(function () { return "abcd" });
+  });
 
   beforeEach(function () {
     cimpress_client_request.credential_cache.flushAll();
@@ -41,6 +50,10 @@ describe('Auth0 v1 delegation', function () {
           return [401, 'v2 not supported', { 'www-authenticate': 'Bearer realm="' + v1AuthServer + '", scope="client_id=' + callingClientId + ' service=' + url + '"' }];
         }
       });
+  });
+
+  after(function () {
+    jwtDecodeStub.restore();
   });
 
   var config = {
