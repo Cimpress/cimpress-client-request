@@ -27,6 +27,9 @@ var check_cache_for_response = function (method, url, authToken, callback) {
       logger(err);
       return callback(err);
     } else {
+      if (data) {
+        return callback(err, JSON.parse(data));
+      }
       return callback(err, data);
     }
   });
@@ -52,10 +55,10 @@ var save_response_in_cache = function (method, url, authToken, res, body) {
   if (cacheControl) {
     credential_cache.set(
       cacheKey,
-      {
+      JSON.stringify({
         res: res,
         body: body,
-      },
+      }),
       cacheControl)
   }
   return;
