@@ -5,6 +5,7 @@ var nodeCache = require('node-cache');
 var parseCacheControl = require('parse-cache-control');
 
 var credential_cache = new nodeCache({ useClones: false });
+var keyGenFunc = construct_cache_key;
 
 var logger = console.log;
 
@@ -12,16 +13,23 @@ var REFRESH_TOKEN_CLIENT_ID = process.env.DEFAULT_TARGET_ID || 'QkxOvNz4fWRFT6vc
 
 var construct_cache_key = function (method, url, authToken) {
   var decodedToken = jwt.decode(authToken);
-  return "" + method + "-" + url + "-" + decodedToken.sub;
+  if (decodedToken && decodedToken.sub) {
+    return "" + method + "-" + url + "-" + decodedToken.sub;
+  } else {
+    return "" + method + "-" + url;
+  }
 };
 
 var check_cache_for_response = function (method, url, authToken, callback) {
-  var cacheKey = construct_cache_key(method, url, authToken);
+  var cacheKey = keyGenFunc(method, url, authToken);
   credential_cache.get(cacheKey, function (err, data) {
     if (err) {
       logger(err);
       return callback(err);
     } else {
+      if (data) {
+        return callback(err, JSON.parse(data));
+      }
       return callback(err, data);
     }
   });
@@ -42,15 +50,15 @@ var parse_cache_control_header = function (headers) {
 };
 
 var save_response_in_cache = function (method, url, authToken, res, body) {
-  var cacheKey = construct_cache_key(method, url, authToken);
+  var cacheKey = keyGenFunc(method, url, authToken);
   var cacheControl = parse_cache_control_header(res.headers);
   if (cacheControl) {
     credential_cache.set(
       cacheKey,
-      {
+      JSON.stringify({
         res: res,
         body: body,
-      },
+      }),
       cacheControl)
   }
   return;
@@ -70,28 +78,33 @@ var retrieve_client_grant = function (config, cb) {
     })
   };
 
-  var jwt_obj = credential_cache.get(audience);
-  if (jwt_obj) {
-    logger("Found cached credential %s", audience);
-    return cb(null, jwt_obj);
-  }
-
-  request(client_grant_options, function (err, response, body) {
-    if (err) {
-      return cb(err);
+  credential_cache.get(audience, function (error, jwt_obj) {
+    if (error) {
+      logger("Error when retrieving v2 access token from cache", error);
     }
 
-    try {
-      body = JSON.parse(body);
-    } catch (e) {
-      return cb('Invalid JSON response from Auth0: ' + body);
+    if (jwt_obj) {
+      logger("Found cached credential %s", audience);
+      return cb(null, jwt_obj);
     }
 
-    // Store the jwt keyed on the audience
-    var jwt_obj = jwt.decode(body.access_token);
-    credential_cache.set(audience, body.access_token, jwt_obj.exp - jwt_obj.iat);
+    request(client_grant_options, function (err, response, body) {
+      if (err) {
+        return cb(err);
+      }
 
-    return cb(null, body.access_token);
+      try {
+        body = JSON.parse(body);
+      } catch (e) {
+        return cb('Invalid JSON response from Auth0: ' + body);
+      }
+
+      // Store the jwt keyed on the audience
+      var jwt_obj = jwt.decode(body.access_token);
+      credential_cache.set(audience, body.access_token, jwt_obj.exp - jwt_obj.iat);
+
+      return cb(null, body.access_token);
+    });
   });
 };
 
@@ -112,30 +125,34 @@ var retrieve_delegated_token = function (config, cb) {
   };
 
   // Check for target_id from cimpress.io portal
-  var jwt_obj = credential_cache.get(config.target_id);
-  if (jwt_obj) {
-    logger("Found cached credential %s", config.target_id);
-    return cb(null, jwt_obj);
-  }
-
-  request(delegation_options, function (err, response, body) {
-    if (err) {
-      return cb(err);
+  credential_cache.get(config.target_id, function (error, jwt_obj) {
+    if (error) {
+      logger("Retrieving v1 token from cache returned error:", error);
+    }
+    
+    if (jwt_obj) {
+      logger("Found cached credential %s", config.target_id);
+      return cb(null, jwt_obj);
     }
 
-    try {
-      body = JSON.parse(body);
-    } catch (e) {
-      return cb('Invalid JSON response from Auth0: ' + body);
-    }
+    request(delegation_options, function (err, response, body) {
+      if (err) {
+        return cb(err);
+      }
 
-    // Store the jwt keyed on the audience
-    var jwt_obj = jwt.decode(body.id_token);
-    credential_cache.set(config.target_id, body.id_token, jwt_obj.exp - jwt_obj.iat);
+      try {
+        body = JSON.parse(body);
+      } catch (e) {
+        return cb('Invalid JSON response from Auth0: ' + body);
+      }
 
-    return cb(null, body.id_token);
+      // Store the jwt keyed on the audience
+      var jwt_obj = jwt.decode(body.id_token);
+      credential_cache.set(config.target_id, body.id_token, jwt_obj.exp - jwt_obj.iat);
+
+      return cb(null, body.id_token);
+    });
   });
-
 };
 
 /**
@@ -163,13 +180,11 @@ var parse_auth_headers = module.exports.parse_auth_headers = function (config, r
 module.exports = (function () {
   var request_builder = function (options, callback) {
 
-    if (options.keyGen) {
-      construct_cache_key = options.keyGen;
-    }
-
     if (!options.method) {
       options.method = 'GET';
     }
+
+    keyGenFunc = options.keyGen || construct_cache_key;
 
     var retry_loop = function () {
       // Look for a retry_count property in options
@@ -227,7 +242,7 @@ module.exports = (function () {
                 return retry_loop();
               }
 
-              if (res.statusCode >= 200 && res.statusCode < 300){
+              if (res.statusCode >= 200 && res.statusCode < 300) {
                 save_response_in_cache(options.method, options.url, options.auth.bearer, res, body);
               }
               return callback(err, res, body);
@@ -276,7 +291,7 @@ module.exports = (function () {
                 return retry_loop();
               }
 
-              if (res.statusCode >= 200 && res.statusCode < 300){
+              if (res.statusCode >= 200 && res.statusCode < 300) {
                 save_response_in_cache(options.method, options.url, options.auth.bearer, res, body);
               }
               return callback(err, res, body);
@@ -305,7 +320,7 @@ module.exports = (function () {
                 return retry_loop();
               }
 
-              if (res.statusCode >= 200 && res.statusCode < 300){
+              if (res.statusCode >= 200 && res.statusCode < 300) {
                 save_response_in_cache(options.method, options.url, options.auth.bearer, res, body);
               }
               return callback(err, res, body);
