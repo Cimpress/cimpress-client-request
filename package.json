@@ -1,6 +1,6 @@
 {
   "name": "cimpress-client-request",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "A reference implementation of a cimpress.io API client embodied in a wrapped version of request",
   "main": "index.js",
   "scripts": {
