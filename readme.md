@@ -43,7 +43,7 @@ var options = {
         target_id: 'see below'
     },
     keyGen: function(method, url, accessToken){ return url + method + accessToken },
-    retry_count: 2,
+    times_to_retry: 2,
 };
 request(options);
 ```
@@ -59,7 +59,7 @@ Here's how you should use those 4 `auth` parameters + 2 new parameters:
 | authorization_server | OPTIONAL The server to call to request client credential grants  (https://auth0.com/docs/api-auth/grant/client-credentials).  This defaults to https://cimpress-dev.auth0.com/oauth/token.
 | audience | OPTIONAL The audience to send when requesting client credential grants  (https://auth0.com/docs/api-auth/grant/client-credentials). This defaults to https://api.cimpress.io/ |
 | keyGen | OPTIONAL A function that returns a string to be used when caching responses. Takes in the url, method, and access token used. If not specified a default function is used |
-| retry_count | OPTIONAL The number of times to retry when receiving a non-2XX response |
+| times_to_retry | OPTIONAL The number of times to retry when receiving a non-2XX or 401 response. The callback will be passed an error once the retry limit is hit |
 
 
 You can specify your caching method by calling:
