@@ -129,7 +129,7 @@ var retrieve_delegated_token = function (config, cb) {
     if (error) {
       logger("Retrieving v1 token from cache returned error:", error);
     }
-    
+
     if (jwt_obj) {
       logger("Found cached credential %s", config.target_id);
       return cb(null, jwt_obj);
@@ -187,14 +187,25 @@ module.exports = (function () {
     keyGenFunc = options.keyGen || construct_cache_key;
 
     var retry_loop = function () {
-      // Look for a retry_count property in options
-      options.retry_count = options.retry_count + 1 || 1;
+      if (options.times_to_retry === undefined || options.times_to_retry === null || options.times_to_retry > 0) {
+        
+        if (options.times_to_retry) {
+          options.times_to_retry = options.times_to_retry - 1;
+        }
 
-      logger("Retrying in %sms", 200 << options.retry_count);
+        // Look for a retry_count property in options
+        options.retry_count = options.retry_count + 1 || 1;
 
-      setTimeout(function () {
-        request_builder(options, callback);
-      }, 200 << options.retry_count);
+        logger("Retrying in %sms", 200 << options.retry_count);
+
+        setTimeout(function () {
+          request_builder(options, callback);
+        }, 200 << options.retry_count);
+      }
+      else {
+        logger('No response from url %s during any calls or re-tries', options.url);
+        return callback('No response from url ' + options.url + ' during any calls or re-tries');
+      }
     };
 
     var v1auth = function (res) {
